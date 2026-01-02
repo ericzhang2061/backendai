@@ -1,0 +1,797 @@
+# Backend.AI Manager Configuration Sample
+#
+# This is a sample configuration file for the Backend.AI Manager.
+# All configuration options are documented with their descriptions,
+# default values, and examples.
+#
+# Generated automatically from the ManagerUnifiedConfig schema.
+
+# Database configuration settings.
+# Defines how the manager connects to its PostgreSQL database.
+# Contains connection details, credentials, and pool settings.
+[db]
+  # Type of the database system to use.
+  # Currently, only PostgreSQL is supported as the main database backend.
+  type = "postgresql"
+  # Network address and port of the database server.
+  # Default is the standard PostgreSQL port on localhost.
+  addr = { host = "127.0.0.1", port = 5432 }
+  # Database name to use.
+  # This database must exist and be accessible by the configured user.
+  # Length must be between 2 and 64 characters due to database naming constraints.
+  name = "DB_NAME"
+  # Username for authenticating with the database.
+  # This user must have sufficient privileges for all database operations.
+  user = "DB_USER"
+  # Password for authenticating with the database.
+  # Can be a direct password string or an environment variable name.
+  # For security, using environment variables is recommended in production.
+  ## password = "develove"
+  # Size of the database connection pool.
+  # Determines how many concurrent database connections to maintain.
+  # Should be tuned based on expected load and database server capacity.
+  pool-size = 8
+  # Maximum lifetime of a connection in seconds before it's recycled.
+  # Set to -1 to disable connection recycling.
+  # Useful to handle cases where database connections are closed by the server
+  # after inactivity.
+  pool-recycle = -1
+  # Whether to test connections with a lightweight ping before using them.
+  # Helps detect stale connections before they cause application errors.
+  # Adds a small overhead but improves reliability.
+  pool-pre-ping = false
+  # Maximum number of additional connections to create beyond the pool_size.
+  # Set to -1 for unlimited overflow connections.
+  # These connections are created temporarily when pool_size is insufficient.
+  max-overflow = 64
+  # Timeout in seconds for acquiring a connection from the pool.
+  # 0 means wait indefinitely.
+  # If connections cannot be acquired within this time, an exception is raised.
+  lock-conn-timeout = 0
+
+# Etcd configuration settings.
+# Used for distributed coordination between manager instances.
+# Contains connection details and authentication information.
+[etcd]
+  # Namespace prefix for etcd keys used by Backend.AI.
+  # Allows multiple Backend.AI clusters to share the same etcd cluster.
+  # All Backend.AI related keys will be stored under this namespace.
+  namespace = "ETCD_NAMESPACE"
+  # Network address of the etcd server.
+  # Default is the standard etcd port on localhost.
+  # In production, should point to one or more etcd instance endpoint(s).
+  ## addr = { host = "127.0.0.1", port = 2379 }  # | [ { host = "127.0.0.1", port = 2379 } ]
+  # Username for authenticating with etcd.
+  # Optional if etcd doesn't require authentication.
+  # Should be set along with password for secure deployments.
+  ## user = "backend"
+  # Password for authenticating with etcd.
+  # Optional if etcd doesn't require authentication.
+  # Can be a direct password or environment variable reference.
+  ## password = "develove"
+
+# Core manager service configuration.
+# Controls how the manager operates, communicates, and scales.
+# Includes network settings, process management, and service parameters.
+[manager]
+  # Base directory path for inter-process communication files.
+  # Used for Unix domain sockets and other IPC mechanisms.
+  # This directory must be writable by the manager process.
+  # In production, consider using /var/run/backend.ai/ipc instead.
+  ipc-base-path = "/tmp/backend.ai/ipc"
+  # Number of worker processes to spawn for the manager.
+  # Defaults to the number of CPU cores available.
+  # For optimal performance, set this to match your CPU core count.
+  num-proc = 12
+  # Unique identifier for this manager instance.
+  # Used to distinguish between multiple manager instances in a cluster.
+  # By default, uses the hostname with an 'i-' prefix.
+  # Must be unique across all managers in the same Backend.AI cluster.
+  id = "i-gimhyeogjin-ui-MacBookPro.local"
+  # User ID (UID) under which the manager process runs.
+  # If not specified, defaults to the UID of the server.py file.
+  # Important for proper file permissions when creating files/sockets.
+  ## user = "501"
+  # Group ID (GID) under which the manager process runs.
+  # If not specified, defaults to the GID of the server.py file.
+  # Important for proper file permissions when creating files/sockets.
+  ## group = "20"
+  # Network address and port where the manager service will listen.
+  # Default is all interfaces (0.0.0.0) on port 8080.
+  # For private deployments, consider using 127.0.0.1 instead.
+  service-addr = { host = "0.0.0.0", port = 8080 }
+  # Address and port to announce to other components.
+  # This is used for service discovery and should be accessible by other
+  # components.
+  announce-addr = { host = "127.0.0.1", port = 5432 }
+  # Address and port to announce for internal API requests.
+  # This is used for service discovery and should be accessible by other
+  # components.
+  announce-internal-addr = { host = "host.docker.internal", port = 18080 }
+  # Set the internal hostname/port to accept internal API requests.
+  internal-addr = { host = "0.0.0.0", port = 18080 }
+  # Path to the keypair file used for RPC authentication.
+  # This file contains key pairs used for secure communication between manager
+  # components.
+  # In production, should be stored in a secure location with restricted access.
+  rpc-auth-manager-keypair = "fixtures/manager/manager.key_secret"
+  # Timeout in seconds for agent heartbeat checks.
+  # If an agent doesn't respond within this time, it's considered offline.
+  # Should be set higher than the agent's heartbeat interval.
+  heartbeat-timeout = 40.0
+  # Secret key for manager authentication and signing.
+  # Used for securing API tokens and inter-service communication.
+  # Should be a strong random string in production environments.
+  # If not provided, one will be generated automatically (not recommended for
+  # clusters).
+  secret = "XXXXXXXXXXXXXX"
+  # Whether to enable SSL/TLS for secure API communication.
+  # Strongly recommended for production deployments exposed to networks.
+  # Requires valid certificate and private key when enabled.
+  ssl-enabled = false
+  # Path to the SSL certificate file.
+  # Required if `ssl_enabled` is True.
+  # Should be a PEM-formatted certificate file, either self-signed or from a CA.
+  ## ssl-cert = "fixtures/manager/manager.crt"
+  # Path to the SSL private key file.
+  # Required if `ssl_enabled` is True.
+  # Should be a PEM-formatted private key corresponding to the certificate.
+  ## ssl-privkey = "fixtures/manager/manager.key"
+  # Event loop implementation to use.
+  # 'asyncio' is the Python standard library implementation.
+  # 'uvloop' is a faster alternative but may have compatibility issues with some
+  # libraries.
+  event-loop = "asyncio"
+  # Distributed lock mechanism to coordinate multiple manager instances.
+  # - filelock: Simple file-based locks (not suitable for distributed deployments)
+  # - pg_advisory: PostgreSQL advisory locks (default, good for small/medium
+  # clusters)
+  # - redlock: Redis-based distributed locking (good for large clusters)
+  # - etcd: etcd-based locks (good for large clusters with etcd)
+  # - etcetra: etcd v3 API-compatible distributed locking
+  distributed-lock = "pg_advisory"
+  # Maximum lifetime in seconds for session scheduling locks.
+  # If scheduling takes longer than this, locks will be automatically released.
+  # Prevents deadlocks in case a manager fails during scheduling.
+  session-schedule-lock-lifetime = 30
+  # Maximum lifetime in seconds for session precondition check locks.
+  # Controls how long the manager can hold a lock while checking if a session can
+  # be created.
+  # Should be balanced to prevent both deadlocks and race conditions.
+  session-check-precondition-lock-lifetime = 30
+  # Maximum lifetime in seconds for session start locks.
+  # Controls how long the manager can hold a lock while starting a session.
+  # Longer values are safer but may block other managers longer on failure.
+  session-start-lock-lifetime = 30
+  # Path to the file where the manager process ID will be written.
+  # Useful for service management and monitoring.
+  # Set to /dev/null by default to disable this feature.
+  pid-file = "/dev/null"
+  # List of explicitly allowed plugins to load.
+  # If specified, only these plugins will be loaded, even if others are installed.
+  # Useful for controlling exactly which plugins are active.
+  # Leave as None to load all available plugins except those in disabled_plugins.
+  ## allowed-plugins = [ "example.plugin.what.you.want",]
+  # List of plugins to explicitly disable.
+  # These plugins won't be loaded even if they're installed.
+  # Useful for disabling problematic or unwanted plugins without uninstalling
+  # them.
+  ## disabled-plugins = [ "example.plugin.what.you.want",]
+  # Whether to hide detailed agent information in API responses.
+  # When enabled, agent details are obscured in user-facing APIs.
+  # Useful for security in multi-tenant environments.
+  hide-agents = false
+  # Priority order for resources when selecting agents for compute sessions.
+  # Determines which resources are considered more important during scheduling.
+  # Default prioritizes GPU resources (CUDA, ROCm) over CPU and memory.
+  agent-selection-resource-priority = [ "cuda", "rocm", "tpu", "cpu", "mem",]
+  # Deprecated: Container image used for the importer service.
+  # The importer handles tasks like installing additional packages.
+  # Should be compatible with the Backend.AI environment.
+  importer-image = "lablup/importer:manylinux2010"
+  # Maximum WebSocket message size in bytes.
+  # Controls the largest message that can be sent over WebSocket connections.
+  # Default is 16 MiB, which should be sufficient for most use cases.
+  # Increase for applications that need to transfer larger data chunks.
+  max-wsmsg-size = 16777216
+  # Deprecated: Port for the aiomonitor terminal UI.
+  # Use `aiomonitor_termui_port` instead.
+  ## aiomonitor-port = 38100  # min=1 max=65535
+  # Port for the aiomonitor terminal UI.
+  # Allows connecting to a debugging console for the manager.
+  # Should be a port that's not used by other services.
+  aiomonitor-termui-port = 38100
+  # Port for the aiomonitor web UI.
+  # Provides a web-based monitoring interface for the manager.
+  # Should be a port that's not used by other services.
+  aiomonitor-webui-port = 39100
+  # Whether to use the experimental Redis-based event dispatcher.
+  # May provide better performance for event handling in large clusters.
+  # Not recommended for production use unless specifically needed.
+  use-experimental-redis-event-dispatcher = false
+  # Interval in seconds between status updates.
+  # Controls how frequently the manager updates its status.
+  # Smaller values provide more real-time information but increase overhead.
+  ## status-update-interval = 60.0  # min=0
+  # How long in seconds status information is considered valid.
+  # Status records older than this will be ignored or refreshed.
+  # Should be greater than the status_update_interval.
+  ## status-lifetime = 60  # min=0
+  # Port for exposing public metrics (e.g., Prometheus endpoint).
+  # If specified, metrics will be available at this port.
+  # Leave as None to disable public metrics exposure.
+  ## public-metrics-port = 8080  # min=1 max=65535
+  # Whether to use the Sokovan orchestrator for session scheduling.
+  # When enabled, uses the new Sokovan orchestrator for improved scheduling
+  # performance.
+  # When disabled, falls back to the legacy scheduling system.
+  use-sokovan = true
+
+  # Configuration for PostgreSQL advisory locks.
+  # This is used when distributed_lock is set to pg_advisory.
+  [manager.pg-advisory-config]
+
+  # Configuration for file-based locks.
+  # This is used when distributed_lock is set to filelock.
+  [manager.filelock-config]
+
+  # Configuration for Redis-based distributed locking.
+  # This is used when distributed_lock is set to redlock.
+  [manager.redlock-config]
+
+  # Configuration for etcd-based distributed locking.
+  # This is used when distributed_lock is set to etcd.
+  [manager.etcdlock-config]
+
+# Deprecated: Docker registry configuration.
+# Contains settings for connecting to Docker registries.
+[docker_registry]
+  # Deprecated: Whether to verify SSL certificates when connecting to Docker
+  # registries.
+  # Disabling this is not recommended except for testing with self-signed
+  # certificates.
+  ssl-verify = true
+
+# Logging system configuration.
+# Controls how logs are formatted, filtered, and stored.
+# Detailed configuration is handled in ai.backend.logging.
+[logging]
+  # The version used by logging.dictConfig().
+  version = 1
+  # The main log level to filter messages from all loggers.
+  level = "INFO"
+  # Disable the existing loggers when applying the config.
+  disable-existing-loggers = false
+  # The list of log drivers to activate.
+  drivers = [ "console",]
+
+  # The mapping of log handler configurations.
+  [logging.handlers]
+
+  # The mapping of per-namespace logger configurations.
+  [logging.loggers]
+
+  [logging.console]
+    # Opt to print colorized log.
+    ## colored = true
+    # Determine verbosity of log.
+    format = "verbose"
+
+  [logging.file]
+    # Path to store log.
+    path = "/var/log/backend.ai"
+    # Log file name.
+    filename = "wsproxy.log"
+    # Number of outdated log files to retain.
+    backup-count = 5
+    # Maximum size for a single log file.
+    ## rotation-size = "..."  # |     # min=0
+    # Determine verbosity of log.
+    format = "verbose"
+
+  [logging.logstash]
+    # Connection information of logstash node.
+    endpoint = { host = "127.0.0.1", port = 8001 }
+    # Protocol to communicate with logstash server.
+    protocol = "tcp"
+    # Use TLS to communicate with logstash server.
+    ssl-enabled = true
+    # Verify validity of TLS certificate when communicating with logstash.
+    ssl-verify = true
+
+  [logging.graylog]
+    # Graylog hostname.
+    host = "127.0.0.1"
+    # Graylog server port number.
+    port = 8000
+    # Log level.
+    level = "INFO"
+    # The custom source identifier. If not specified, fqdn will be used instead.
+    ## localname = "..."
+    # The fuly qualified domain name of the source.
+    ## fqdn = "..."
+    # Verify validity of TLS certificate when communicating with logstash.
+    ssl-verify = true
+    # Path to Root CA certificate file.
+    ## ca-certs = "/etc/ssl/ca.pem"
+    # Path to TLS private key file.
+    ## keyfile = "/etc/backend.ai/graylog/privkey.pem"
+    # Path to TLS certificate file.
+    ## certfile = "/etc/backend.ai/graylog/cert.pem"
+
+  # Override default log level for specific scope of package
+  [logging.pkg_ns]
+
+# Pyroscope profiling configuration.
+# Controls integration with the Pyroscope performance profiling tool.
+# Used for monitoring and analyzing application performance.
+[pyroscope]
+  # Whether to enable Pyroscope profiling.
+  # When enabled, performance profiling data will be sent to a Pyroscope server.
+  # Useful for debugging performance issues, but adds some overhead.
+  enabled = false
+  # Application name to use in Pyroscope.
+  # This name will identify this manager instance in Pyroscope UI.
+  # Required if Pyroscope is enabled.
+  ## app-name = "backendai-half-manager"
+  # Address of the Pyroscope server.
+  # Must include the protocol (http or https) and port if non-standard.
+  # Required if Pyroscope is enabled.
+  ## server-addr = "http://localhost:4040"
+  # Sampling rate for Pyroscope profiling.
+  # Higher values collect more data but increase overhead.
+  # Balance based on your performance monitoring needs.
+  ## sample-rate = 10
+
+# Debugging options configuration.
+# Controls various debugging features and tools.
+# Should typically be disabled in production environments.
+[debug]
+  # Master switch for debug mode.
+  # When enabled, activates various debugging features.
+  # Should be disabled in production for security and performance.
+  enabled = false
+  # Whether to enable asyncio debug mode.
+  # Helps detect problems like coroutines never awaited or excessive event loop
+  # delays.
+  # Adds significant overhead, use only during development.
+  asyncio = false
+  # Enable enhanced task information in aiomonitor.
+  # Provides more detailed information about running asyncio tasks.
+  # Useful for debugging complex async issues, but adds overhead.
+  enhanced-aiomonitor-task-info = false
+  # Whether to log all internal events.
+  # When enabled, all events passing through the system will be logged.
+  # Very verbose, but useful for debugging event-related issues.
+  log-events = false
+  # Whether to log scheduler ticks.
+  # Provides detailed logs about the scheduler's internal operations.
+  # Useful for debugging scheduling issues, but generates many log entries.
+  log-scheduler-ticks = false
+  # Whether to periodically synchronize and log system statistics.
+  # When enabled, regularly collects and logs performance metrics.
+  # Helpful for monitoring system behavior over time.
+  periodic-sync-stats = false
+
+# Reporter configuration.
+# Controls how notifications and logs are reported.
+# Includes settings for Audit Logs, and Action Monitors, and SMTP reporters.
+# Each reporter can be configured with its own settings.
+[reporter]
+  # SMTP reporter configuration.
+  # Controls how email notifications are sent.
+  # Includes settings for SMTP server, authentication, and email templates.
+  [[reporter.smtp]]
+  # Add multiple [[reporter.smtp]] sections as needed
+    # Name of the SMTP reporter.
+    # Used to identify this reporter in the system.
+    name = "smtp"
+    # Host address of the service.
+    # Can be a hostname, IP address, or special addresses like 0.0.0.0 to bind to
+    # all interfaces.
+    host = "smtp.gmail.com"
+    # Port number of the service.
+    # Must be between 1 and 65535.
+    # Ports below 1024 require root/admin privileges.
+    port = 465
+    # Username for authenticating with the SMTP server.
+    # This is required for sending emails through the SMTP service.
+    username = "user@example.com"
+    # Password for authenticating with the SMTP server.
+    # This is required for sending emails through the SMTP service.
+    password = "password"
+    # Email address of the sender.
+    # This is the address that will appear as the sender in emails.
+    sender = "sender@example.com"
+    # List of email addresses to send notifications to.
+    # Can include multiple recipients separated by commas.
+    recipients = [ "recipient1@example.com", "recipient2@example.com",]
+    # Whether to use TLS for secure communication with the SMTP server.
+    # Recommended for production environments to protect sensitive information.
+    use-tls = true
+    # Maximum number of worker threads for sending emails.
+    # Controls how many emails can be sent concurrently.
+    # Higher values may improve performance but increase resource usage.
+    max-workers = 5
+    # Template for the email body.
+    # Can include placeholders for dynamic content.
+    # Placeholders will be replaced with actual values when sending emails.
+    template = "\nAction type: {{ action_type }}\nEntity ID: {{ entity_id }}\nStatus: {{ status }}\nDescription: {{ description }}\nStarted at: {{ created_at }}\nFinished at: {{ ended_at }}\nDuration: {{ duration }} seconds\n\nThis email is sent from Backend.AI SMTP Reporter.\n"
+    # Policy for triggering email notifications.
+    # - ALL: Send emails for all events.
+    # - ON_ERROR: Send emails only for error events.
+    # Choose based on your notification needs.
+    trigger-policy = "ALL"
+
+  # Action monitors configuration.
+  # Each reporter can be configured to subscribe to specific actions.
+  [[reporter.action-monitors]]
+  # Add multiple [[reporter.action-monitors]] sections as needed
+    # List of action types to subscribe to for monitoring.
+    subscribed-actions = []
+    # Name of the reporter to use for sending notifications.
+    # This should match the name of a configured reporter.
+    reporter = "smtp"
+
+# System-wide settings.
+# Controls general behavior of the Backend.AI system.
+[system]
+  # Timezone setting for the manager.
+  # Uses pytz-compatible timezone names.
+  timezone = "UTC"
+
+# API server configuration.
+# Controls how the API behaves, including security and limits.
+[api]
+  # CORS allow-origins setting.
+  # Use '*' to allow all origins, or specify comma-separated domain patterns.
+  # Important for browser-based clients connecting to the API.
+  allow_origins = "*"
+  # Whether to allow GraphQL schema introspection.
+  # Useful for development and debugging, but should be disabled in production.
+  # When disabled, GraphQL tools like GraphiQL won't be able to explore the
+  # schema.
+  allow_graphql_schema_introspection = false
+  # Whether to allow OpenAPI schema introspection.
+  # Useful for development and debugging, but should be disabled in production.
+  # When disabled, Swagger UI and similar tools won't work.
+  allow_openapi_schema_introspection = false
+  # Maximum depth of GraphQL queries allowed.
+  # Limits the complexity of queries to prevent abuse.
+  # Set to None to disable the limit.
+  ## max_gql_query_depth =     # min=1
+  # Maximum page size for GraphQL connection fields.
+  # Controls how many items can be retrieved in a single request.
+  # Set to None to use the default page size.
+  ## max_gql_connection_page_size =     # min=1
+
+  # Resource visibility settings.
+  # Controls how resources are shared and visible between users and groups.
+  [api.resources]
+    # Whether to return group resource status in check-presets.
+    # If true, group resources are visible to all users in the group.
+    group-resource-visibility = false
+
+# Redis database configuration.
+# Used for distributed caching and messaging between managers.
+[redis]
+  # Network address and port of the Redis server.
+  # Redis is used for distributed caching and messaging between managers.
+  # Set to None when using Sentinel for high availability.
+  ## addr = "{ HostPortPair }"
+  # Service name for Redis Sentinel.
+  # Required when using Redis Sentinel for high availability.
+  # Identifies which service to monitor for failover.
+  ## service_name = "..."
+  # Password for authenticating with Redis.
+  # Set to None if Redis doesn't require authentication.
+  # Should be kept secret in production environments.
+  ## password = "..."
+  # Timeout in milliseconds for Redis requests.
+  # Controls how long operations wait before timing out.
+  # If None, uses the default timeout configured in the Redis client.
+  ## request_timeout =   
+  # Whether to use TLS for Redis connections.
+  use_tls = false
+  # Whether to skip TLS certificate verification.
+  # Set to True for self-signed certificates or development environments.
+  tls_skip_verify = false
+
+  # Configuration for the Redis helper library.
+  # Controls timeouts and reconnection behavior.
+  # Adjust based on network conditions and reliability requirements.
+  [redis.redis_helper_config]
+    # Timeout in seconds for Redis socket operations.
+    # Controls how long operations wait before timing out.
+    # Increase for slow or congested networks.
+    socket_timeout = 5.0
+    # Timeout in seconds for establishing Redis connections.
+    # Controls how long connection attempts wait before failing.
+    # Shorter values fail faster but may be too aggressive for some networks.
+    socket_connect_timeout = 2.0
+    # Time in seconds to wait between reconnection attempts.
+    # Controls the polling frequency when trying to reconnect to Redis.
+    # Lower values reconnect faster but may increase network load.
+    reconnect_poll_timeout = 0.3
+    # Timeout in seconds to wait for a connection from the blocking connection pool.
+    # Used by BlockingConnectionPool for distributed locking scenarios.
+    # If no connection is available within this time, a timeout error is raised.
+    connection_ready_timeout = 20.0
+
+  # Optional override configurations for specific Redis contexts.
+  # Allows different Redis settings for different services within Backend.AI.
+  # Each key represents a context name, and the value is a complete Redis
+  # configuration.
+  [redis.override_configs]
+
+  # List of Redis Sentinel addresses for high availability.
+  # If provided, the manager will use Redis Sentinel for automatic failover.
+  # When using Sentinel, the addr field is ignored and service_name is required.
+  [[redis.sentinel]]
+  # Add multiple [[redis.sentinel]] sections as needed
+    # Host address of the service.
+    # Can be a hostname, IP address, or special addresses like 0.0.0.0 to bind to
+    # all interfaces.
+    host = "127.0.0.1"
+    # Port number of the service.
+    # Must be between 1 and 65535.
+    # Ports below 1024 require root/admin privileges.
+    port = 8080
+
+# Idle session checker configuration.
+[idle]
+  # Enabled idle checkers.
+  # Comma-separated list of checker names.
+  enabled = ""
+  # Timeout for app-streaming TCP connections.
+  # Controls how long the system waits before considering a connection idle.
+  app_streaming_packet_timeout = "PT5M"
+
+  # Idle checkers configurations.
+  [idle.checkers]
+
+# Docker container settings.
+# Controls how Docker images are managed and used.
+[docker]
+  # Docker image management settings.
+  # Controls how the manager handles Docker images.
+  [docker.image]
+    # Policy for automatically pulling Docker images.
+    # 'digest': Pull if image digest has changed (most secure)
+    # 'tag': Pull if image tag has changed
+    # 'none': Never pull automatically (manual control)
+    auto_pull = "digest"
+
+# Plugin system configuration.
+# Controls behavior of various Backend.AI plugins.
+[plugins]
+  # Accelerator plugin configurations.
+  # Settings for GPU, TPU, and other acceleration devices.
+  # Specific configuration depends on installed plugins.
+  [plugins.accelerator]
+
+  # Scheduler plugin configurations.
+  # Controls how compute sessions are scheduled across agents.
+  # Examples include FIFO, LIFO, DRF schedulers.
+  [plugins.scheduler]
+
+  # Agent selector plugin configurations.
+  # Controls how agents are selected for compute sessions.
+  # Can implement various selection strategies based on load, resource
+  # availability, etc.
+  [plugins.agent_selector]
+
+  # Network plugin configurations.
+  [plugins.network]
+
+# Network configuration settings.
+# Controls networking between containers and agents.
+[network]
+  # Settings for networks between containers.
+  # Controls how containers communicate with each other.
+  [network.inter_container]
+    # Default network driver for inter-container communication.
+    # 'overlay' is typically used for multi-host networking.
+    # Container communication performance depends on this setting.
+    ## default_driver = "overlay"
+    #
+    enabled = false
+    #
+    ## plugin = {  }
+
+  # Subnet configurations for the Backend.AI network.
+  # Defines IP ranges for agents and containers.
+  [network.subnet]
+    # IP subnet for agent communications.
+    # Specifies which subnet is used for agent-to-agent and agent-to-manager
+    # traffic.
+    # Use 0.0.0.0/0 to allow all IPv4 addresses.
+    agent = "0.0.0.0/0"
+    # IP subnet for containers.
+    # Specifies which subnet is used for container networks.
+    # Use 0.0.0.0/0 to allow all IPv4 addresses.
+    container = "0.0.0.0/0"
+
+#
+  [network.rpc]
+    #
+    keepalive_timeout = 60.0
+
+# Watcher service configuration.
+# Controls the component that monitors compute sessions.
+[watcher]
+  # Authentication token for the watcher service.
+  # Used to secure communication between manager and watcher.
+  # Should be a secure random string in production.
+  ## token = "..."
+  # Timeout in seconds for file I/O operations in watcher.
+  # Controls how long the watcher waits for file operations to complete.
+  # Increase for handling large files or slow storage systems.
+  file_io_timeout = 10
+
+# Authentication settings.
+# Controls password policies and other security measures.
+[auth]
+  # Maximum password age before requiring a change.
+  # Format is a duration string like "90d" for 90 days.
+  # Set to None to disable password expiration.
+  # max_password_age =
+  # The password hashing algorithm to use for new passwords.
+  # Supported algorithms: bcrypt, sha256, sha3_256, pbkdf2_sha256,
+  # pbkdf2_sha3_256.
+  # Existing passwords with different algorithms will be gradually migrated.
+  password-hash-algorithm = "pbkdf2_sha256"
+  # The number of rounds (iterations) for the password hashing algorithm.
+  # Higher values are more secure but slower.
+  # - bcrypt: valid range is 4-31 (will be automatically capped at 31)
+  # - pbkdf2_sha256: recommended 100,000+ (default 100,000)
+  # - sha256/sha3_256: any positive integer (100,000 may be too high for these)
+  # The value will be automatically adjusted to fit the algorithm's constraints.
+  password-hash-rounds = 600000
+  # The size of the salt in bytes for password hashing.
+  # Larger salts provide better protection against rainbow table attacks.
+  # - Minimum: 16 bytes (128 bits)
+  # - Default: 32 bytes (256 bits) - recommended for most use cases
+  # - Maximum: 256 bytes (2048 bits)
+  # Note: bcrypt manages its own salt internally, so this setting doesn't apply to
+  # bcrypt.
+  password-hash-salt-size = 32
+
+# JWT authentication configuration (shared between manager and webserver via
+# etcd).
+#
+# Note: JWT tokens are signed using per-user secret keys (from keypair table),
+# not a shared system secret key. This maintains the same security model as HMAC
+# authentication.
+[jwt]
+  # Algorithm for JWT token signing.
+  # HS256 (HMAC-SHA256) is the default symmetric algorithm.
+  algorithm = "HS256"
+  # JWT token expiration time in seconds.
+  # Default is 900 seconds (15 minutes).
+  # Range: 60 seconds (1 minute) to 86400 seconds (24 hours).
+  # Shorter expiration times are more secure but may impact user experience.
+  token_expiration_seconds = 900
+
+# Compute session configuration.
+# Controls behavior and limits of compute sessions.
+[session]
+  # Configuration for detecting and handling hung sessions.
+  # Controls how the system detects and recovers from session failures.
+  [session.hang_tolerance]
+    # Threshold settings for detecting hung sessions.
+    # Defines timeouts for different session states.
+    [session.hang_tolerance.threshold]
+      # Maximum time a session can stay in PREPARING state before considered hung.
+      # Format is a duration string like "10m" for 10 minutes.
+      # Controls when the system will attempt recovery actions.
+      ## PREPARING = "..."
+      # Maximum time a session can stay in TERMINATING state before considered hung.
+      # Format is a duration string like "10m" for 10 minutes.
+      # Controls when the system will force-terminate the session.
+      ## TERMINATING = "..."
+
+# Metric collection settings.
+# Controls how metrics are collected and reported.
+[metric]
+  # Address for the metric collection service.
+  addr = { host = "127.0.0.1", port = 9090 }
+  # Time window for metric collection.
+  # Controls how often metrics are collected and reported.
+  # Format is a duration string like "1h" for 1 hour.
+  timewindow = "5m"
+
+# Volume management settings.
+# Controls how volumes are managed and accessed.
+[volumes]
+  # Default volume host for new virtual folders.
+  # Format is "proxy_name:volume_name".
+  # Used when user doesn't explicitly specify a host.
+  ## default_host = "localhost:6021"
+  # Controls what volume information is exposed to users.
+  # Options include "percentage" for disk usage percentage.
+  exposed_volume_info = "percentage"
+
+  # Defines which types of virtual folders are enabled.
+  # Contains configuration for user and group folders.
+  [volumes._types]
+    # User VFolder type configuration.
+    # When present, enables user-owned virtual folders.
+    # Standard folder type for individual users.
+    # user =
+    # Group VFolder type configuration.
+    # When present, enables group-owned virtual folders.
+    # Used for sharing files within a group of users.
+    # group =
+
+  # Mapping of volume proxy configurations.
+  # Each key is a proxy name used in volume host references.
+  [volumes.proxies]
+
+# Resource slots configuration.
+# Controls how resource slots are allocated and managed.
+[resource-slots]
+
+# OpenTelemetry configuration.
+# Controls how tracing and logging are handled with OpenTelemetry.
+[otel]
+  # Whether to enable OpenTelemetry for tracing or logging.
+  # When enabled, traces or log will be collected and sent to the configured OTLP
+  # endpoint.
+  enabled = false
+  # Log level for OpenTelemetry.
+  # Controls the verbosity of logs generated by OpenTelemetry.
+  # Common levels include 'debug', 'info', 'warn', 'error'.
+  log-level = "INFO"
+  # OTLP endpoint for sending traces.
+  # Should include the host and port of the OTLP receiver.
+  endpoint = "http://localhost:4317"
+
+# Service discovery configuration.
+# Controls how services are discovered and connected within the Backend.AI
+# system.
+[service-discovery]
+  # Type of service discovery to use.
+  type = "redis"
+
+# Default artifact registry config.
+[artifact_registry]
+  # Name of the Model registry configuration.
+  # Used to identify this registry in the system.
+  model-registry = "model-registry"
+
+# Reservoir configuration.
+[reservoir]
+  # Whether to enable the approval process for artifact uploads.
+  # When enabled, artifacts require approval before being available.
+  enable-approve-process = false
+  # Whether this reservoir is a leaf in a delegation hierarchy.
+  # If true, it cannot delegate to other reservoirs.
+  use-delegation = false
+  # Name of the reservoir default storage.
+  #
+  # You can specify the storage to be used for each step using
+  # storage_step_selection.
+  # For steps not explicitly specified in storage_step_selection, the storage is
+  # designated by storage_name.
+  # If you specify storage for all steps in storage_step_selection, there is no
+  # need to specify storage_name.
+  storage-name = "minio-storage"
+  # Configuration for the storage.
+  config = "..."
+
+  # Storage step selection configuration for artifact model imports.
+  # Maps different import steps (download, archive) to specific storage backends.
+  # Required for artifact model import operations.
+  [reservoir.storage_step_selection]
+
+# Deployment and model serving configuration.
+# Controls behavior of model deployment features.
+[deployment]
+  # Enable model definition override from storage for non-CUSTOM runtime variants.
+  # When enabled, after generating the model definition programmatically,
+  # the system will attempt to fetch a custom model definition from storage
+  # if model_definition_path is specified in the revision.
+  # If the fetch succeeds, the custom definition overrides the generated one.
+  # If the fetch fails, the generated definition is used as fallback.
+  enable-model-definition-override = false
