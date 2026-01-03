@@ -367,7 +367,3 @@ For detailed development setup, build system usage, and contribution guidelines:
 - [CONTRIBUTING.md](.github/CONTRIBUTING.md) - Contribution guidelines and development workflow
 - [MIGRATION.md](MIGRATION.md) - Migration guide for major version updates
 
-License
--------
-
-Refer to [LICENSE file](https://github.com/lablup/backend.ai/blob/main/LICENSE).
